@@ -1,19 +1,23 @@
 ﻿using Azure.Storage.Blobs;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
+using Testcontainers.Azurite;
 
 namespace Albums.Test;
 
 public class AzuriteContainerTestHelper
 {
-    private const string ConnectionString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+    private readonly AzuriteContainer _container = BuildContainer();
 
-    private readonly IContainer _container = new ContainerBuilder()
-        .WithImage("mcr.microsoft.com/azure-storage/azurite:latest")
-        .WithEntrypoint("azurite")
-        .WithCommand("--blobHost", "0.0.0.0")
-        .WithPortBinding(10000, 10000)
-        .Build();
+    private static AzuriteContainer BuildContainer()
+    {
+        var builder = new AzuriteBuilder();
+
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
+            builder = builder.WithPortBinding(10000, 10000);
+        }
+
+        return builder.Build();
+    }
 
     public async Task StartAsync()
     {
@@ -27,7 +31,7 @@ public class AzuriteContainerTestHelper
 
     public BlobContainerClient GetBlobContainerClient()
     {
-        var blobServiceClient = new BlobServiceClient(ConnectionString);
+        var blobServiceClient = new BlobServiceClient(_container.GetConnectionString());
         return blobServiceClient.GetBlobContainerClient("albums");
     }
 
