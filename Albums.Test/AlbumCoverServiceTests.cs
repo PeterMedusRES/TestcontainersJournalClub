@@ -6,8 +6,30 @@ namespace Albums.Test;
 public class AlbumCoverServiceTests
 {
     private readonly AzuriteContainerTestHelper _testHelper = new();
-    
-    // TODO: OneTimeSetUp/OneTimeTearDown and SetUp/TearDown
+
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
+    {
+        await _testHelper.StartAsync();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
+    {
+        await _testHelper.DisposeAsync();
+    }
+
+    [SetUp]
+    public async Task SetUp()
+    {
+        await _testHelper.CreateBlobContainer();
+    }
+
+    [TearDown]
+    public async Task TearDown()
+    {
+        await _testHelper.DeleteBlobContainer();
+    }
 
     [Test]
     public async Task TestNoUploads()
@@ -28,12 +50,12 @@ public class AlbumCoverServiceTests
         var path = $"AlbumCovers/{albumCover}";
         var fileStream = new MemoryStream(await File.ReadAllBytesAsync(path));
         await albumCoverService.UploadAlbumCoverAsync(Path.GetFileName(path), fileStream);
-        
+
         var albumCovers = await albumCoverService.GetAlbumCoversAsync();
 
         albumCovers.Should().ContainSingle().Which.Should().Be(albumCover);
     }
-    
+
     [Test]
     public async Task TestUploadMultipleAlbumCovers()
     {
